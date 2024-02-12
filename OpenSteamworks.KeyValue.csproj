@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>OpenSteamworks.KeyValue</PackageId>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/OpenSteamClient/OpenSteamworks.KeyValue</RepositoryUrl>
+
+    <!-- Update the version here when you make changes -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenSteamworks.Utils" Version="*">
+      <Private>true</Private>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference> 
+  </ItemGroup>
+
+</Project>
