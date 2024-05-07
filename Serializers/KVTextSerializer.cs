@@ -34,9 +34,6 @@ public class KVTextSerializer {
 
         stack.Add(obj.Name);
 
-        if (stack.Count > 100) {
-            throw new StackOverflowException("Exceeded max safe stack of 100 when serializing " + string.Join(" -> ", stack));
-        }
 
         if (obj.HasChildren) {
             WriteStartObject(obj.Name);
@@ -95,8 +92,9 @@ public class KVTextSerializer {
     {
         builder.Append('"');
 
-        foreach (var @char in text)
+        for (int i = 0; i < text.Length; i++)
         {
+            var @char = text[i];
             switch (@char)
             {
                 case '"':
@@ -104,6 +102,12 @@ public class KVTextSerializer {
                     break;
 
                 case '\\':
+                    if (text.Length == i + 1) {
+                        // Don't add the other slash if it's the end of the string
+                        builder.Append('\\');
+                        break;
+                    }
+
                     builder.Append("\\\\");
                     break;
 

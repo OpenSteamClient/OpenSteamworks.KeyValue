@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using OpenSteamworks.KeyValue.ObjectGraph;
 
 namespace OpenSteamworks.KeyValue.Deserializers;
@@ -55,9 +56,15 @@ public class KVTextDeserializer {
                 case '\"':
                     value = ReadNextQuotedString();
                     break;
+                
+                case '}':
+                    goto BreakLoop;
 
                 default:
-                    throw new Exception($"Unhandled char in KV text: '" + c + "'");
+                    Console.WriteLine("Full text: '" + Text + "'");
+                    Console.WriteLine("Last 5 chars: '" + AllChars[(index-5)..(index)].ToString() + "'");
+                    Console.WriteLine("Next 5 chars: '" + CurrentChars[0..5].ToString() + "'");
+                    throw new Exception($"Unhandled char in KV text: '" + c + "' at index " + index + " while deserializing named object: '" + parent.Name + "'");
 		    }
 
             if (value is KVObject asKV) {
@@ -77,11 +84,13 @@ public class KVTextDeserializer {
             }
         }
 
+        BreakLoop:
         return parent;
     }
 
     private char GetNextNonWhitespaceChar() {
         SkipWhiteSpace();
+
         if (HasReachedEnd) {
             return '}';
         }
@@ -103,25 +112,135 @@ public class KVTextDeserializer {
             }
         }
     }
-    
-    private string ReadNextQuotedString() {
-        int startIndex = -1;
-        int endIndex = -1;
-        while (true) {
-            if (CurrentChars[0] == '\"') {
-                if (startIndex == -1) {
-                    startIndex = index+1;
-                } else {
-                    endIndex = index;
-                }
-            }
-            index++;
 
-            if (endIndex != -1) {
-                break;
+    private bool TryPeekNextNonWhitespaceChar(out char c, out int i, int extra = 0) {
+        c = char.MinValue;
+        i = 0;
+
+        int localIndex = index + extra;
+        bool HasReachedEndLocal() {
+            return localIndex >= Text.Length;
+        }
+
+        ReadOnlySpan<char> CurrentCharsLocal() {
+            return Text.AsSpan(localIndex);
+        }
+
+        void SkipWhiteSpaceLocal() {
+            while (true)
+            {
+                if (HasReachedEndLocal()) {
+                    break;
+                }
+
+                if (char.IsWhiteSpace(CurrentCharsLocal()[0])) {
+                    localIndex++;
+                } else {
+                    break;
+                }
             }
         }
 
-        return AllChars[startIndex..endIndex].ToString();
+        SkipWhiteSpaceLocal();
+
+        if (HasReachedEndLocal()) {
+            return false;
+        }
+
+        c = CurrentCharsLocal()[0];
+        return true;
+    }
+
+    private readonly List<char> escapeChars = ['\\'];
+    private string ReadNextQuotedString() {
+        StringBuilder sb = new();
+
+        SkipWhiteSpace();
+
+        bool foundStart = false;
+        while (true) {
+            if (this.HasReachedEnd) {
+                break;
+            }
+
+            char currentChar = Next();
+
+            // Start of string, " literal
+            if (currentChar == '\"') {
+                if (foundStart) {
+                    break;
+                } else {
+                    foundStart = true;
+                    continue;
+                }
+            }
+
+            if (!foundStart) {
+                continue;
+            }
+
+            if (escapeChars.Contains(currentChar)) {
+                var next = Peek();
+                
+                // Console.WriteLine("prev: " + AllChars[index - 2]);
+                // Console.WriteLine("current: " + currentChar);
+                // Console.WriteLine("next: " + next);
+
+                // Add allowed escapable chars here
+                if (next == '"')
+                {
+                    if (TryPeekNextNonWhitespaceChar(out char peeked, out _, 1)) {
+                        Console.WriteLine("Got peeked char " + peeked);
+                        if (peeked == '}') {
+                            Console.WriteLine("Detected abrupt end of string with escape '}' at the end of the string");
+                            sb.Append(currentChar);
+                        } else if (peeked == '"') {
+                            sb.Append(Next());
+                        } else {
+                            sb.Append(Next());
+                            //sb.Append(peeked);
+                        }
+                    } else {
+                        // Console.WriteLine("Failed peek");
+                        sb.Append(Next());
+                    }
+                } else if (next == '\\') {
+                    sb.Append(Next());
+                } else {
+                    // Console.WriteLine("Not escapable char: " + next);
+                    sb.Append(currentChar);
+                }
+               
+                continue;
+            } else {
+                sb.Append(currentChar);
+            }
+        }
+
+        // Console.WriteLine("Final string:");
+        // Console.WriteLine(sb.ToString());
+        return sb.ToString();
+    }
+
+    private char Next() {
+        if (WillEnd()) {
+            throw new EndOfStreamException();
+        }
+
+        var c = CurrentChars[0];
+        index++;
+        return c;
+    }
+
+    private char Peek(int extra = 0) {
+        if (WillEnd(extra)) {
+            return char.MinValue;
+        }
+
+        return CurrentChars[0 + extra];
+    }
+
+    private bool WillEnd(int extra = 0) {
+        return index + extra >= Text.Length;
     }
 }

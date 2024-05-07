@@ -9,7 +9,7 @@ namespace OpenSteamworks.KeyValue.ObjectGraph;
 /// Base class for typed KVObjects
 /// </summary>
 public abstract class TypedKVObject { 
-    protected KVObject kv { get; init; }
+    protected KVObject kv { get; private set; }
     public KVObject UnderlyingObject => kv;
     
     public TypedKVObject(KVObject kv) {
@@ -126,6 +126,20 @@ public abstract class TypedKVObject {
         }
 
         return dict;
+    }
+
+    protected IEnumerable<string> EmptyStringListIfUnset(string key) {
+        List<string> list = new();
+        if (!TryGetKey(key, out KVObject? kv)) {
+            return list;
+        }
+
+        foreach (var item in kv.Children)
+        {
+            list.Add((string)item.Value);
+        }
+
+        return list;
     }
 
     protected IDictionary<string, string> EmptyStringDictionaryIfUnset(string key) {

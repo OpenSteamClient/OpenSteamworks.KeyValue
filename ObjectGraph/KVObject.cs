@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using OpenSteamworks.KeyValue.Deserializers;
 
 namespace OpenSteamworks.KeyValue.ObjectGraph;
 
@@ -59,6 +60,29 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Access data.
+    /// When getting, the child will be created as a list if it doesn't exist or if the key exists, the existing child will be returned
+    /// </summary>
+    public KVObject this[string key] {
+        get {
+            ThrowIfNotList();
+
+            if (TryGetChild(key, out KVObject? child)) {
+                return child;
+            }
+
+            child = new KVObject(key, new List<KVObject>());
+            this.SetChild(child);
+            return child;
+        }
+
+        set {
+            ThrowIfNotList();
+            SetChild(value);
+        }
     }
 
     public KVChildrenDictionary GetChildrenAsTrackingDictionary() {
@@ -126,7 +150,7 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
         throw new InvalidOperationException("Could not get value of type " + typeof(T).Name + "; type of Value is " + Value.GetType().Name);
     }
 
-    private void SetValue<T>(T val) where T: IFormattable {
+    private void SetValue<T>(T val, bool allowChangeType) where T: IFormattable {
         if (Value is string) {
             var asStr = val.ToString();
             if (asStr == null) {
@@ -138,25 +162,65 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
             Value = val;
         }
 
+        if (allowChangeType) {
+            Value = val;
+            return;
+        }
+
         throw new InvalidOperationException("Attempting to change type of value from " + Value?.GetType().Name + " to " + typeof(T).Name);
     }
 
     public bool GetValueAsBool() => Convert.ToBoolean(GetValueAs<int>());
     public int GetValueAsInt() => GetValueAs<int>();
-    public uint GetValueAsUInt() => GetValueAs<uint>();
+    public uint GetValueAsUInt() {
+        if (Value is string str) {
+            return uint.Parse(str);
+        } else if (Value is int i) {
+            unchecked
+            {
+                return (uint)i;
+            }
+        }
+
+        throw new InvalidOperationException("Could not get value of type uint");
+    }
+
     public float GetValueAsFloat() => GetValueAs<float>();
     public ulong GetValueAsULong() => GetValueAs<ulong>();
     public long GetValueAsLong() => GetValueAs<long>();
     
-    public void SetValue(bool val) => SetValue<int>(Convert.ToInt32(val));
-    public void SetValue(int val) => SetValue<int>(val);
-    public void SetValue(uint val) => SetValue<uint>(val);
-    public void SetValue(float val) => SetValue<float>(val);
-    public void SetValue(ulong val) => SetValue<ulong>(val);
-    public void SetValue(long val) => SetValue<long>(val);
-    public void SetValue(string val) {
+    public void SetValue(bool val, bool allowChangeType = false) => SetValue<int>(Convert.ToInt32(val), allowChangeType);
+    public void SetValue(int val, bool allowChangeType = false) => SetValue<int>(val, allowChangeType);
+    public void SetValue(uint val, bool allowChangeType = false) {
+        if (Value is string) {
+            Value = val.ToString();
+        } else if (Value is int) {
+            unchecked
+            {
+                Value = (int)val;
+            }
+        }
+
+        if (allowChangeType) {
+            Value = val;
+            return;
+        }
+
+        throw new InvalidOperationException("Attempting to change type of value from " + Value?.GetType().Name + " to uint");
+    }
+
+    public void SetValue(float val, bool allowChangeType = false) => SetValue<float>(val, allowChangeType);
+    public void SetValue(ulong val, bool allowChangeType = false) => SetValue<ulong>(val, allowChangeType);
+    public void SetValue(long val, bool allowChangeType = false) => SetValue<long>(val, allowChangeType);
+    public void SetValue(string val, bool allowChangeType = false) {
         if (Value is string) {
             Value = val;
+            return;
+        }
+
+        if (allowChangeType) {
+            Value = val;
+            return;
         }
 
         throw new InvalidOperationException("Attempting to change type of value from " + Value?.GetType().Name + " to string");
@@ -175,6 +239,22 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
         }
 
         throw new InvalidOperationException("Could not get value of type string");
+    }
+
+    /// <summary>
+    /// Tries to get the value as a string.
+    /// If the value is not a string, it is attempted to be formatted to a string.
+    /// If it cannot be formatted to a string, null is returned.
+    /// </summary>
+    /// <returns></returns>
+    public string? TryGetValueAsString() {
+        if (Value is string str) {
+            return str;
+        } else if (Value is IFormattable c) {
+            return c.ToString();
+        } else {
+            return null;
+        }
     }
 
     public bool HasChild(string key) {
@@ -279,5 +359,11 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
     public bool Equals(KVObject? other)
     {
         return Equals(other, true);
+    }
+
+    public void RemoveAllChildren()
+    {
+        ThrowIfNotList();
+        ChildrenInternal.Clear();
     }
 }
