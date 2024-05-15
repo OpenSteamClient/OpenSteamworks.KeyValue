@@ -48,7 +48,7 @@ public class KVChildrenDictionary : IDictionary<string, object>
 
     public ICollection<dynamic> Values => new List<dynamic>(this.rootObject.Children.Select(o => o.Value));
 
-    public int Count => this.rootObject.ChildrenInternal.Count;
+    public int Count => this.rootObject.Children.Count;
     public bool IsReadOnly => false;
 
     public KVChildrenDictionary(KVObject rootObject) {
@@ -71,7 +71,7 @@ public class KVChildrenDictionary : IDictionary<string, object>
 
     public void Clear()
     {
-        this.rootObject.ChildrenInternal.Clear();
+        this.rootObject.Children.Clear();
     }
 
     public bool Contains(KeyValuePair<string, dynamic> item)

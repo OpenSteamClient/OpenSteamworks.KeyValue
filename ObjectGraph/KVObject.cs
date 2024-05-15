@@ -18,14 +18,7 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
 
     public dynamic Value { get; internal set; }
     public bool HasChildren => Value is List<KVObject>;
-    public IEnumerable<KVObject> Children {
-        get {
-            ThrowIfNotList();
-            return (Value as List<KVObject>)!.AsEnumerable();
-        }
-    }
-
-    internal List<KVObject> ChildrenInternal {
+    public List<KVObject> Children {
         get {
             ThrowIfNotList();
             return (Value as List<KVObject>)!;
@@ -41,12 +34,12 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
             return;
         }
 
-        ChildrenInternal.Add(kv);
+        Children.Add(kv);
     }
 
     public bool RemoveChild(string key) {
         ThrowIfNotList();
-        return this.ChildrenInternal.RemoveAll((obj) => obj.Name == key) > 0;
+        return this.Children.RemoveAll((obj) => obj.Name == key) > 0;
     }
 
     public KVObject? GetChild(string key) {
@@ -293,7 +286,7 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
         }
 
         if (this.HasChildren && other.HasChildren) {
-            if (this.Children.Count() != other.Children.Count()) {
+            if (this.Children.Count != other.Children.Count) {
                 return false;
             }
 
@@ -325,7 +318,7 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
             var cloned = new KVObject(Name, new List<KVObject>());
             foreach (var item in Children)
             {
-                cloned.ChildrenInternal.Add(item.Clone());
+                cloned.Children.Add(item.Clone());
             }
 
             return cloned;
@@ -364,6 +357,6 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
     public void RemoveAllChildren()
     {
         ThrowIfNotList();
-        ChildrenInternal.Clear();
+        Children.Clear();
     }
 }
