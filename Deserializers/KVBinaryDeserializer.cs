@@ -13,8 +13,10 @@ namespace OpenSteamworks.KeyValue.Deserializers;
 public sealed class KVBinaryDeserializer : IDisposable {
     private readonly Stream stream;
     private readonly EndianAwareBinaryReader reader;
+    private readonly string[]? stringTable;
 
-    private KVBinaryDeserializer(Stream stream) {
+    private KVBinaryDeserializer(Stream stream, string[]? stringTable = null) {
+        this.stringTable = stringTable;
         this.stream = stream;
         this.reader = new EndianAwareBinaryReader(stream, Encoding.Default, true, Endianness.Little);
     }
@@ -32,7 +34,14 @@ public sealed class KVBinaryDeserializer : IDisposable {
                 break;
             }
 
-            var name = reader.ReadNullTerminatedUTF8String();
+            // Note: BType may lie here, since the new string table system stores ints but keeps the type as string
+            string name;
+            if (stringTable != null) {
+                name = stringTable[reader.ReadInt32()];
+            } else {
+                name = reader.ReadNullTerminatedUTF8String();
+            }
+
             dynamic value;
 
             if (placeholderName) {
@@ -99,11 +108,22 @@ public sealed class KVBinaryDeserializer : IDisposable {
         }
     }
 
+    /// <summary>
+    /// If a string table is required for deserialization, provide it here, otherwise use another method
+    /// </summary>
+    public static KVObject DeserializeWithStringTable(byte[] bytes, string[] stringTable) {
+        using var serializer = new KVBinaryDeserializer(new MemoryStream(bytes), stringTable);
+        return serializer.Deserialize();
+    }
+
+    public static KVObject DeserializeWithStringTable(Stream stream, string[] stringTable) {
+        using var serializer = new KVBinaryDeserializer(stream, stringTable);
+        return serializer.Deserialize();
+    }
+
     public static KVObject Deserialize(Stream stream) {
-        using (var serializer = new KVBinaryDeserializer(stream))
-        {
-            return serializer.Deserialize();
-        }
+        using var serializer = new KVBinaryDeserializer(stream);
+        return serializer.Deserialize();
     }
 
     public void Dispose()

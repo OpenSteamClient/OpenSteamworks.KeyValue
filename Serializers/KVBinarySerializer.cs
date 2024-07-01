@@ -12,8 +12,11 @@ namespace OpenSteamworks.KeyValue.Serializers;
 public sealed class KVBinarySerializer : IDisposable {
     private readonly Stream stream;
     private readonly EndianAwareBinaryWriter writer;
+    private readonly bool enableStringTable = false;
+    private readonly List<string> stringTable = new();
 
-    public KVBinarySerializer(Stream stream) {
+    private KVBinarySerializer(Stream stream, bool enableStringTable = false) {
+        this.enableStringTable = enableStringTable;
         this.stream = stream;
         this.writer = new EndianAwareBinaryWriter(stream, Encoding.Default, true, Endianness.Little);
     }
@@ -30,6 +33,14 @@ public sealed class KVBinarySerializer : IDisposable {
         using (var serializer = new KVBinarySerializer(stream))
         {
             serializer.SerializeRootObject(toSerialize);
+        }
+    }
+
+    public static void SerializeWithKeyTable(Stream stream, out List<string> keyTable, KVObject toSerialize) {
+        using (var serializer = new KVBinarySerializer(stream, true))
+        {
+            serializer.SerializeRootObject(toSerialize);
+            keyTable = serializer.stringTable;
         }
     }
 
@@ -81,7 +92,22 @@ public sealed class KVBinarySerializer : IDisposable {
     private BType WriteTypeAndName(KVObject obj) {
         BType type = GetBTypeFromType(obj.Value.GetType());
         stream.WriteByte((byte)type);
-        stream.Write(Encoding.UTF8.GetBytes(obj.Name + "\0"));
+
+        if (enableStringTable)
+        {
+            var idx = stringTable.IndexOf(obj.Name);
+            if (idx == -1)
+            {
+                stringTable.Add(obj.Name);
+                idx = stringTable.Count - 1;
+            }
+
+            // This doesn't need null termination, parser will handle it
+            writer.WriteInt32(idx);
+        } else {
+            stream.Write(Encoding.UTF8.GetBytes(obj.Name + "\0"));
+        }
+
         return type;
     }
 
