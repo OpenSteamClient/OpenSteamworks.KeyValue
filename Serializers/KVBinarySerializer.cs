@@ -69,15 +69,15 @@ public sealed class KVBinarySerializer : IDisposable {
             case BType.Int32:
             case BType.Color:
             case BType.Pointer:
-                writer.WriteInt32(toSerialize.Value);
+                writer.WriteInt32((int)toSerialize.Value);
                 break;
             
             case BType.UInt64:
-                writer.WriteUInt64(toSerialize.Value);
+                writer.WriteUInt64((ulong)toSerialize.Value);
                 break;
             
             case BType.Int64:
-                writer.WriteInt64(toSerialize.Value);
+                writer.WriteInt64((long)toSerialize.Value);
                 break;
             
             case BType.Float32:

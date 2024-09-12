@@ -43,7 +43,12 @@ public class KVTextSerializer {
             }
             WriteEndObject();
         } else {
-            WriteKeyValuePair(obj.Name, obj.Value);
+            if (obj.Value is not IConvertible convertible) 
+            {
+                throw new ArgumentException("KV value is not IConvertible", nameof(obj));
+            } 
+
+            WriteKeyValuePair(obj.Name, convertible);
         }
 
         stack.Remove(obj.Name);

@@ -42,11 +42,11 @@ public class KVChildrenDictionary : IDictionary<string, object>
     }
 
     private readonly KVObject rootObject;
-    public dynamic this[string key] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public object this[string key] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public ICollection<string> Keys => new List<string>(this.rootObject.Children.Select(o => o.Name));
 
-    public ICollection<dynamic> Values => new List<dynamic>(this.rootObject.Children.Select(o => o.Value));
+    public ICollection<object> Values => new List<object>(this.rootObject.Children.Select(o => o.Value));
 
     public int Count => this.rootObject.Children.Count;
     public bool IsReadOnly => false;
@@ -59,12 +59,12 @@ public class KVChildrenDictionary : IDictionary<string, object>
         this.rootObject = rootObject;
     }
 
-    public void Add(string key, dynamic value)
+    public void Add(string key, object value)
     {
         this.rootObject.SetChild(new KVObject(key, value));
     }
 
-    public void Add(KeyValuePair<string, dynamic> item)
+    public void Add(KeyValuePair<string, object> item)
     {
         this.rootObject.SetChild(new KVObject(item.Key, item.Value));
     }
@@ -74,7 +74,7 @@ public class KVChildrenDictionary : IDictionary<string, object>
         this.rootObject.Children.Clear();
     }
 
-    public bool Contains(KeyValuePair<string, dynamic> item)
+    public bool Contains(KeyValuePair<string, object> item)
     {
         var child = this.rootObject.GetChild(item.Key);
         if (child == null) {
@@ -89,7 +89,7 @@ public class KVChildrenDictionary : IDictionary<string, object>
         return this.rootObject.GetChild(key) != null;
     }
 
-    public IEnumerator<KeyValuePair<string, dynamic>> GetEnumerator()
+    public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
     {
         return new KVChildrenEnumerator(this);
     }
@@ -99,12 +99,12 @@ public class KVChildrenDictionary : IDictionary<string, object>
         return this.rootObject.RemoveChild(key);
     }
 
-    public bool Remove(KeyValuePair<string, dynamic> item)
+    public bool Remove(KeyValuePair<string, object> item)
     {
         return this.rootObject.RemoveChild(item.Key);
     }
 
-    public bool TryGetValue(string key, [MaybeNullWhen(false)] out dynamic value)
+    public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value)
     {
         var obj = this.rootObject.GetChild(key);
         if (obj == null) {
