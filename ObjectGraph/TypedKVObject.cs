@@ -80,7 +80,7 @@ public abstract class TypedKVObject {
         return def;
     }
 
-    protected void SetValue<T>(string key, T val) => kv.SetChild(new KVObject(key, (dynamic)val!));
+    protected void SetValue<T>(string key, T val) where T: notnull => kv.SetChild(KVObject.Create(key, val));
 
     protected void SetValueTypedObject<T>(string key, T val) where T: TypedKVObject {
         SetValue(key, val.UnderlyingObject.Value);
