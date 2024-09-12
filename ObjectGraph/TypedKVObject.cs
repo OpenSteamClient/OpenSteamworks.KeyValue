@@ -94,7 +94,7 @@ public abstract class TypedKVObject {
 
         foreach (var item in val)
         {
-            child.SetChild(new KVObject(item.Key, item.Value.UnderlyingObject.Value));
+            child.SetChild(KVObject.Create(item.Key, item.Value.UnderlyingObject.Value));
         }
 
         kv.SetChild(child);

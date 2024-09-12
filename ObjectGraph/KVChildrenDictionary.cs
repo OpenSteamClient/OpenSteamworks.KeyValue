@@ -61,12 +61,12 @@ public class KVChildrenDictionary : IDictionary<string, object>
 
     public void Add(string key, object value)
     {
-        this.rootObject.SetChild(new KVObject(key, value));
+        this.rootObject.SetChild(KVObject.Create(key, value));
     }
 
     public void Add(KeyValuePair<string, object> item)
     {
-        this.rootObject.SetChild(new KVObject(item.Key, item.Value));
+        this.rootObject.SetChild(KVObject.Create(item.Key, item.Value));
     }
 
     public void Clear()

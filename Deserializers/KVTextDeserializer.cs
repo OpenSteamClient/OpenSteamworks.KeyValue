@@ -39,7 +39,7 @@ public class KVTextDeserializer {
             }
 
             string name = ReadNextQuotedString();
-            dynamic value;
+            object value;
 
             if (placeholderName) {
                 placeholderName = false;
@@ -68,9 +68,9 @@ public class KVTextDeserializer {
 		    }
 
             if (value is KVObject asKV) {
-                deserialized = new KVObject(name, asKV.Value);
+                deserialized = KVObject.Create(name, asKV.Value);
             } else {
-                deserialized = new KVObject(name, value);
+                deserialized = KVObject.Create(name, value);
             }
 
             if (setPlaceholderName) {

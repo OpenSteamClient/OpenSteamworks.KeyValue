@@ -42,7 +42,7 @@ public sealed class KVBinaryDeserializer : IDisposable {
                 name = reader.ReadNullTerminatedUTF8String();
             }
 
-            dynamic value;
+            object value;
 
             if (placeholderName) {
                 placeholderName = false;
@@ -82,9 +82,9 @@ public sealed class KVBinaryDeserializer : IDisposable {
 		    }
 
             if (value is KVObject asKV) {
-                deserialized = new KVObject(name, asKV.Value);
+                deserialized = KVObject.Create(name, asKV.Value);
             } else {
-                deserialized = new KVObject(name, value);
+                deserialized = KVObject.Create(name, value);
             }
 
             if (setPlaceholderName) {

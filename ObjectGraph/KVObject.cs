@@ -88,10 +88,15 @@ public class KVObject : IEquatable<KVObject>, ICloneable {
         }
     }
 
-    internal KVObject(string name, object val)
+    private KVObject(string name, object val)
     {
         this.Name = name;
         this.Value = val;
+    }
+
+    internal static KVObject Create(string name, object val)
+    {
+        return new(name, val);
     }
 
     public KVObject(string name, List<KVObject> children) {
