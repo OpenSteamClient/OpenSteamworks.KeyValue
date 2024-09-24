@@ -12,7 +12,6 @@ on:
       - "**.h"
       - "**.hpp"
       - ".github/workflows/dotnet.yaml"
-  pull_request:
 
 jobs:
   build:
